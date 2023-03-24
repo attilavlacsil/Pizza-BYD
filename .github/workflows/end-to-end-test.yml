@@ -19,7 +19,7 @@ jobs:
         ports:
           - "1433:1433"
       api:
-        image: ghcr.io/${{ github.repository_owner }}/pizza-api:rc
+        image: ghcr.io/${{ github.repository_owner }}/pizza-byd-api:rc
         env:
           ASPNETCORE_URLS: http://+:80
           ConnectionStrings__Pizza: Server=tcp:mssql;Initial Catalog=Pizza;User ID=sa;Password=Strong@Passw0rd;Connection Timeout=5;ConnectRetryCount=0;TrustServerCertificate=True;
