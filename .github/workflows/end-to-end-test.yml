@@ -1,0 +1,55 @@
+name: end-to-end-test
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [prerelease]
+    types:
+      - completed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          SA_PASSWORD: Strong@Passw0rd
+          ACCEPT_EULA: Y
+        ports:
+          - "1433:1433"
+      api:
+        image: ghcr.io/${{ github.repository_owner }}/pizza-api:rc
+        env:
+          ASPNETCORE_URLS: http://+:80
+          ConnectionStrings__Pizza: Server=tcp:mssql;Initial Catalog=Pizza;User ID=sa;Password=Strong@Passw0rd;Connection Timeout=5;ConnectRetryCount=0;TrustServerCertificate=True;
+        ports:
+          - "80:80"
+    steps:
+    # It can be any end-to-end test which can be executed by GitHub Actions
+    - name: Test
+      id: test
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = "Stop"
+        
+        Invoke-WebRequest -Method Post -Uri "http://localhost/admin/createDatabase"
+        
+        $response = Invoke-WebRequest -Method Post -Uri "http://localhost/api/pizza" -Headers @{"Content-Type"="application/json"} -Body @"
+        {
+          "name": "pizza",
+          "sauce": {
+            "name": "tomato",
+            "isLactoseFree": true
+          },
+          "toppings": [
+            {
+              "type": "meat",
+              "name": "ham"
+            }
+          ]
+        }
+        "@
+        $response
+
+        Invoke-WebRequest -Method Get -Uri ([string]$response.Headers.Location)

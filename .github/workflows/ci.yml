@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          SA_PASSWORD: Strong@Passw0rd
+          ACCEPT_EULA: Y
+        ports:
+          - "1433:1433"
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore 
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal --environment DB_USER=sa --environment DB_PASSWORD=Strong@Passw0rd
